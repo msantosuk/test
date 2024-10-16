@@ -2,20 +2,24 @@ import subprocess
 import os
 import validators
 import sys
+import time
 
 
 def main():
     clear_screen()
-    print("DNS Query Tool")
-    print("----------------")
-    v_install = str(input("Do you wanna install the DNS query tools? (Y/N) ")).lower()
+    print(" \n DNS Query Tool")
+    print(" ----------------")
+    v_install = str(input(" Do you wanna install the DNS query tools? (Y/N) ")).lower()
     if v_install == "y":
+        subprocess.run(['sudo','apt-get', 'update'], check=True)
         check_install('dnsutils')
         check_install('curl')
         check_install('traceroute')
         check_install('whois')
         check_install('nmap')
+    main_input()
 
+def main_input():
     clear_screen()
     while True:
         # Input URL from user
@@ -23,29 +27,25 @@ def main():
         while True:
             clear_screen()
 
-            print("DNS Query Tool")
-            print("----------------")
-            url = input("Enter the URL to perform DNS query: ").strip()
+            print(" \n DNS Query Tool")
+            print(" ----------------")
+            url = input(" Enter the URL to perform DNS query: ").strip()
             if url == "":
                 clear_screen()
                 sys.exit()
+            try:
+                subprocess.run(['host', url], check=True)
+            except subprocess.CalledProcessError as e:
+                if e.returncode > 0:
+                    print("\n< Invalid URL! >")
+                    time.sleep(2)
+                    continue
                
             full_url = "https://"+url      
             if is_valid_url(full_url):
                 break 
 
-
-        # Perform dig query and display output
-        records = get_dns_records(url)
-        if records.returncode == 0:
-            print("\nDig Query Output:")
-            for line in str(records.stdout).splitlines():
-                print(line)
-        else:
-            print(f"\nError performing 'dig' query on {url}:")
-            print(str(records.stderr))
-
-        execute_command(url)
+        main_options(url)
 
 
 def is_valid_url(url):
@@ -57,25 +57,26 @@ def get_dns_records(url):
     return subprocess.run(['dig', '+short', url], capture_output=True, text=True)
 
 
-def execute_command(url):
+def main_options(url):
     while True:
         clear_screen()
-        print("Execute the specified command in a Linux terminal")
-        print("\nAvailable commands:")
-        print("1. nslookup - Display NS records")
-        print("2. host - Display host information")
-        print("3. dig - Display A records (IP addresses)")
-        print("4. curl - Fetches content from a URL")
-        print("5. traceroute - Trace route to a host")
-        print("6. whois - Display WHOIS information")
-        print("7. nmap - Port scanning")
+        print(" Execute the specified command in a Linux terminal")
+        print(" URL: ", url)
+        print(" \n Available commands:\n")
+        print(" 1 - nslookup")
+        print(" 2 - host")
+        print(" 3 - dig")
+        print(" 4 - curl")
+        print(" 5 - traceroute")
+        print(" 6 - whois")
+        print(" 7 - nmap")
 
-        choice = input("\nSelect a command to execute: ")
+        choice = input("\n Select a command to execute: ")
 
         if choice == "1":
             f_nslookup(url)
         elif choice == "2":
-            subprocess.run(['host', url], check=True)
+            f_host(url)
         elif choice == "3":
             subprocess.run(['dig', url], check=True)
         elif choice == "4":
@@ -88,47 +89,115 @@ def execute_command(url):
         elif choice == "7":
             subprocess.run(['nmap', url], check=True)
         else:
-            return            
-        
+            return   
+
 
 def f_nslookup(url):
     while True:
         clear_screen()
-        print("Execute the specified nslookup command")
-        print("\nAvailable commands:")
-        print("1. Basic Query")
-        print("2. MX Record Query ")
-        print("3. NS Record Query")
-        print("4. SOA Record Query")
-        print("5. TXT Record Query ")
+        print(" Execute the specified nslookup command")
+        print(" URL: ", url)
+        print("\n Available commands:\n")
+        print(" 1 - Find out the BASIC A record of the domain.")
+        print(" 2 - Find out the MX records responsible for the email exchange.")
+        print(" 3 - Find out the NS records of the domain")
+        print(" 4 - Find out the SOA record of the domain.")
+        print(" 5 - Find out the TXT record of the domain.")
+        print(" 6 - Find out the available ANY DNS records of the domain.")
+        print(" 7 - Find out the Available INFO DNS records of the domain.")
+        print(" 8 - Changing the timeout interval for a reply.")
+        print(" 9 - Debug mode.")
 
-        choice = input("\nSelect a command to execute: ")
-
+        choice = input("\n Select a command to execute: ")
         clear_screen()
+        print("\n")
+        try:
+            if choice == "1":
+                subprocess.run(['nslookup', url], check=True)
+            elif choice == "2":
+                subprocess.run(['nslookup', '-type=MX', url], check=True)
+            elif choice == "3":
+                subprocess.run(['nslookup', '-type=NS', url], check=True)
+            elif choice == "4":
+                subprocess.run(['nslookup', '-type=SOA', url], check=True)
+            elif choice == "5":
+                subprocess.run(['nslookup', '-type=TXT', url], check=True)
+            elif choice == "6":
+                subprocess.run(['nslookup', '-type=ANY', url], check=True)
+            elif choice == "7":
+                subprocess.run(['nslookup', '-type=hinfo', url], check=True)
+            elif choice == "8":
+                value = str(input(" Add the timeout time in seconds: ") or "1").strip()
+                subprocess.run(['nslookup', 'f("-timeout={value}', url], check=True)            
+            elif choice == "9":
+                subprocess.run(['nslookup', '-debug', url], check=True)
+            else:
+                return
+            input(" < Press enter to continue... >") 
+        except subprocess.CalledProcessError as e:
+            input(" < Press enter to continue... >")
+
+
+
+def f_host(url):
+    while True:
+        clear_screen()
+        print(" Execute the specified host command")
+        print(" URL: ", url)
+        print("\n Available commands:\n")
+        print(" 1 - Basic - Find the A record of the domain.")
+        print(" 2 - Find out the domain name servers use the -t option.")
+        print(" 3 - Find out the domain CNAME,")
+        print(" 4 - Find out the MX records for the domain.")
+        print(" 5 - Find out the TXT records for the domain.")
+        print(" 6 - Find out the Domain SOA Record.")
+        print(" 7 - Find all Information of Domain Records and Zones.")
+        print(" 8 - Find out domain TTL information.")
+        print(" 9 - Set UDP Retries for a Lookup.")
+        print(" 10 - Set Query Time Wait for Reply")        
+        
+        choice = input("\n Select a command to execute: ")
+        clear_screen()
+        print("\n")
 
         if choice == "1":
-            subprocess.run(['nslookup', url], check=True)
+            subprocess.run(['host', url], check=True)
         elif choice == "2":
-            subprocess.run(['nslookup', '-type=MX', url], check=True)
+            subprocess.run(['host', '-t', 'ns', url], check=True)
         elif choice == "3":
-            subprocess.run(['nslookup', '-type=NS', url], check=True)
+            subprocess.run(['host', '-t', 'cname', url], check=True)
         elif choice == "4":
-            subprocess.run(['nslookup', '-type=SOA', url], check=True)
+            subprocess.run(['host', '-n', '-t', 'mx', url], check=True)
         elif choice == "5":
-            subprocess.run(['nslookup', '-type=TXT', url], check=True)
+            subprocess.run(['host', '-t', 'txt', url], check=True)
+        elif choice == "6":
+            strip_www = url.lstrip("www.")
+            subprocess.run(['host', '-C', strip_www], check=True)
+        elif choice == "7":
+            subprocess.run(['host', '-a', url], check=True)
+        elif choice == "8":
+            subprocess.run(['host', '-v', '-t', 'a', url], check=True)
+        elif choice == "9":            
+            value = str(input(" Add the number of UDP tries: ") or "1").strip()
+            subprocess.run(['host', '-R', value, url], check=True)
+        elif choice == "10":
+            value = str(input(" Add the specified time in seconds: ") or "1").strip()
+            subprocess.run(['host', '-T', '-W', value, url], check=True)
         else:
             return
-        input()
+        input("\n\n < Press enter to continue... >")
+
 
 
 
 
 def clear_screen() ->None:
-    """Clear the terminal screen."""
+
     if os.name == "posix":
         os.system("clear")
     else:
         os.system("cls")
+    print("\n")
 
 
 def check_install(package):
